@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Аренда автомобилей в Дубае</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ===========================================
+   THEME — «Ночная пустыня» (Дубай)
+   Глубокий синий + золото + терракота
+   =========================================== */
+:root {
+    --bg: #0a1220;
+    --bg-2: #0f1c31;
+    --bg-3: #152843;
+    --gold: #d4a94e;
+    --gold-soft: #e8c97a;
+    --gold-deep: #a67c2e;
+    --cream: #f4efe6;
+    --muted: #9aa4b8;
+    --terracotta: #d9825f;
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body: 'Manrope', sans-serif;
+    --title-size: 92px;
+    --subtitle-size: 30px;
+    --body-size: 27px;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   =========================================== */
+html, body {
+    width: 100%; height: 100%; margin: 0; overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+.deck-viewport {
+    position: fixed; inset: 0; overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+.deck-stage {
+    position: absolute; left: 0; top: 0;
+    width: 1920px; height: 1080px; overflow: hidden;
+    transform-origin: 0 0; background: var(--slide-bg, #fff);
+}
+.slide {
+    position: absolute; inset: 0;
+    width: 1920px; height: 1080px; overflow: hidden;
+    display: block; visibility: hidden; opacity: 0; pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+.slide.active, .slide.visible {
+    visibility: visible; opacity: 1; pointer-events: auto; z-index: 1;
+}
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+    html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+    .deck-viewport { position: static; overflow: visible; background: #fff; }
+    .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+    .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+    .slide:last-child { break-after: auto; page-break-after: auto; }
+    .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* ===========================================
+   BASE SLIDE THEME
+   =========================================== */
+.slide { background: var(--bg); color: var(--cream); font-family: var(--font-body); }
+.slide-content {
+    position: absolute; inset: 0;
+    padding: 96px 110px;
+    display: flex; flex-direction: column; justify-content: center;
+}
+
+/* атмосферный фон — абстрактные «дюны» */
+.dune {
+    position: absolute; border-radius: 50%;
+    filter: blur(70px); opacity: 0.35; pointer-events: none;
+}
+.dune.gold { background: radial-gradient(circle, rgba(212,169,78,0.55), transparent 70%); }
+.dune.blue { background: radial-gradient(circle, rgba(21,40,67,0.9), transparent 70%); }
+.dune.terra { background: radial-gradient(circle, rgba(217,130,95,0.4), transparent 70%); }
+
+/* типографика */
+.kicker {
+    font-family: var(--font-body); font-weight: 700; font-size: 22px;
+    letter-spacing: 0.35em; text-transform: uppercase; color: var(--gold);
+}
+h1.title {
+    font-family: var(--font-display); font-weight: 600;
+    font-size: var(--title-size); line-height: 1.02; color: var(--cream);
+}
+h2.title {
+    font-family: var(--font-display); font-weight: 600;
+    font-size: 64px; line-height: 1.05; color: var(--cream);
+}
+.lead { font-size: var(--subtitle-size); color: var(--muted); line-height: 1.5; }
+.gold-rule { width: 120px; height: 2px; background: var(--gold); margin: 26px 0; }
+
+/* reveal анимация */
+.reveal { opacity: 0; transform: translateY(34px); transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
+.slide.visible .reveal { opacity: 1; transform: translateY(0); }
+.reveal:nth-child(1) { transition-delay: 0.08s; }
+.reveal:nth-child(2) { transition-delay: 0.18s; }
+.reveal:nth-child(3) { transition-delay: 0.28s; }
+.reveal:nth-child(4) { transition-delay: 0.38s; }
+.reveal:nth-child(5) { transition-delay: 0.48s; }
+.reveal:nth-child(6) { transition-delay: 0.58s; }
+.reveal:nth-child(7) { transition-delay: 0.68s; }
+.reveal:nth-child(8) { transition-delay: 0.78s; }
+
+/* страница/прогресс */
+.page-num {
+    position: absolute; right: 70px; bottom: 60px;
+    font-family: var(--font-body); font-weight: 700; font-size: 20px; color: var(--muted);
+}
+.page-num b { color: var(--gold); }
+
+/* ===========================================
+   СЛАЙД 1 — ТИТУЛ
+   =========================================== */
+.title-slide .slide-content { justify-content: center; padding-left: 150px; }
+.title-slide .brand {
+    position: absolute; top: 70px; left: 150px;
+    font-weight: 800; font-size: 22px; letter-spacing: 0.3em; color: var(--gold);
+}
+.title-slide .kicker { margin-bottom: 30px; }
+.title-slide h1 { font-size: 128px; max-width: 1300px; }
+.title-slide .lead { margin-top: 40px; max-width: 900px; }
+
+/* ===========================================
+   СТАТ-ВЫНОСКИ (Рынок в цифрах)
+   =========================================== */
+.stats-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 56px 70px; margin-top: 60px;
+}
+.stat .num {
+    font-family: var(--font-display); font-weight: 600; font-size: 88px;
+    color: var(--gold-soft); line-height: 1;
+}
+.stat .lab { margin-top: 14px; font-size: 24px; color: var(--muted); }
+.stat { border-top: 1px solid rgba(212,169,78,0.35); padding-top: 26px; }
+
+/* ===========================================
+   СЕЗОННАЯ ШКАЛА
+   =========================================== */
+.season-band {
+    display: flex; align-items: center; gap: 34px;
+    padding: 40px 44px; margin-top: 24px;
+    background: var(--bg-2); border-radius: 6px;
+}
+.season-band .mon { font-family: var(--font-display); font-size: 44px; font-weight: 600; width: 340px; color: var(--cream); }
+.season-band .tag { font-size: 22px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; width: 210px; }
+.season-band .desc { flex: 1; font-size: 26px; color: var(--muted); line-height: 1.45; }
+.season-band .pct { font-family: var(--font-display); font-size: 52px; font-weight: 600; }
+.hot { border-left: 4px solid var(--terracotta); }
+.hot .tag, .hot .pct { color: var(--terracotta); }
+.warm { border-left: 4px solid var(--gold); }
+.warm .tag, .warm .pct { color: var(--gold); }
+.cool { border-left: 4px solid #5f87b8; }
+.cool .tag, .cool .pct { color: #7fa4d0; }
+
+/* ===========================================
+   БАР-ЧАРТ (Динамика)
+   =========================================== */
+.chart { display: flex; align-items: flex-end; gap: 80px; height: 460px; margin-top: 70px; }
+.bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 20px; height: 100%; justify-content: flex-end; }
+.bar { width: 150px; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, var(--gold-soft), var(--gold-deep)); }
+.bar.b1 { height: 160px; }
+.bar.b2 { height: 310px; }
+.bar.b3 { height: 460px; }
+.bar-label { font-size: 24px; color: var(--muted); text-align: center; }
+.bar-val { font-family: var(--font-display); font-size: 44px; font-weight: 600; color: var(--gold-soft); }
+
+/* ===========================================
+   ДВУХКОЛОНОЧНАЯ РАСКЛАДКА
+   =========================================== */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 90px; margin-top: 50px; align-items: start; }
+.split h3 { font-family: var(--font-display); font-size: 40px; font-weight: 600; color: var(--gold-soft); margin-bottom: 22px; }
+.split ul { list-style: none; }
+.split li { font-size: 25px; line-height: 1.5; color: var(--muted); padding-left: 30px; position: relative; margin-bottom: 16px; }
+.split li::before { content: ''; position: absolute; left: 0; top: 14px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
+.split .pros li::before { background: var(--gold); }
+.split .cons li::before { background: var(--terracotta); }
+
+/* ===========================================
+   СПИСОК С НОМЕРАМИ
+   =========================================== */
+.num-list { margin-top: 50px; }
+.num-item { display: flex; gap: 34px; align-items: baseline; margin-bottom: 30px; }
+.num-item .n { font-family: var(--font-display); font-size: 54px; font-weight: 600; color: var(--gold); min-width: 70px; }
+.num-item .t { font-size: 27px; color: var(--cream); }
+.num-item .t b { color: var(--gold-soft); font-weight: 700; }
+.num-item .d { font-size: 24px; color: var(--muted); line-height: 1.5; margin-top: 6px; }
+
+/* ===========================================
+   ТАБЛИЦА ЗАТРАТ
+   =========================================== */
+table.costs { width: 100%; border-collapse: collapse; margin-top: 40px; }
+table.costs th {
+    font-family: var(--font-body); font-weight: 700; font-size: 23px; color: var(--gold-soft);
+    text-align: left; padding: 20px 28px; border-bottom: 2px solid rgba(212,169,78,0.4);
+}
+table.costs td { font-size: 25px; color: var(--cream); padding: 20px 28px; border-bottom: 1px solid rgba(154,164,184,0.2); }
+table.costs td.r { text-align: right; color: var(--gold-soft); font-weight: 700; }
+table.costs tr.total td { font-family: var(--font-display); font-size: 34px; font-weight: 600; color: var(--gold); border-bottom: none; }
+
+/* ===========================================
+   SECTION СЛАЙД
+   =========================================== */
+.section-slide .slide-content { justify-content: center; }
+.section-slide h2 { font-size: 108px; max-width: 1500px; }
+.section-slide .idx { font-family: var(--font-body); font-weight: 800; font-size: 26px; letter-spacing: 0.4em; color: var(--gold); margin-bottom: 26px; }
+
+/* ===========================================
+   ЗАКЛЮЧЕНИЕ
+   =========================================== */
+.end-slide .slide-content { justify-content: center; }
+.end-slide h2 { font-size: 92px; max-width: 1500px; }
+
+/* ===========================================
+   ИНЛАЙН-РЕДАКТИРОВАНИЕ
+   =========================================== */
+.edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+.edit-toggle { position: fixed; top: 14px; left: 14px; z-index: 10001; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; background: var(--gold); color: #0a1220; border: none; border-radius: 8px; padding: 10px 14px; font-family: var(--font-body); font-weight: 700; font-size: 15px; cursor: pointer; }
+.edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+.slide [contenteditable="true"]:focus { outline: 2px dashed var(--gold); }
+</style>
+</head>
+<body>
+<div class="edit-hotzone"></div>
+<button class="edit-toggle" id="editToggle" title="Редактировать (E)">✏️ Редактировать</button>
+
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- ==================== 1. ТИТУЛ ==================== -->
+<section class="slide title-slide active">
+    <div class="dune gold" style="width:1100px;height:1100px;right:-320px;top:-380px;"></div>
+    <div class="dune blue" style="width:900px;height:900px;left:-350px;bottom:-400px;"></div>
+    <div class="slide-content">
+        <div class="brand reveal">DUBAI · 2026</div>
+        <div class="kicker reveal">Анализ рынка</div>
+        <h1 class="title reveal">Аренда автомобилей<br>в Дубае</h1>
+        <p class="lead reveal">Сезонный спрос · влияние на бизнес · ключевые моменты запуска</p>
+    </div>
+    <div class="page-num">01</div>
+</section>
+
+<!-- ==================== 2. РЕЗЮМЕ ==================== -->
+<section class="slide">
+    <div class="dune gold" style="width:800px;height:800px;left:-260px;top:-300px;"></div>
+    <div class="slide-content">
+        <div class="kicker reveal">Суть</div>
+        <h2 class="title reveal">Ключевые выводы</h2>
+        <div class="gold-rule reveal"></div>
+        <div class="num-list reveal">
+            <div class="num-item"><div class="n">01</div><div><div class="t"><b>Растущий рынок.</b> ОАЭ — 2,2 млрд AED в 2025 (+11,8% г/г), Дубай даёт 55%+ выручки, прогноз $6,7 млрд к 2035.</div></div></div>
+            <div class="num-item"><div class="n">02</div><div><div class="t"><b>Сильная сезонность.</b> Пик спроса ноябрь–февраль, спад июнь–сентябрь.</div></div></div>
+            <div class="num-item"><div class="n">03</div><div><div class="t"><b>Неравномерный поток.</b> Зимой высокая загрузка, летом — простой флота.</div></div></div>
+            <div class="num-item"><div class="n">04</div><div><div class="t"><b>Вход доступен.</b> Лицензия + RTA + флот от 25–50 тыс. AED в первый год.</div></div></div>
+            <div class="num-item"><div class="n">05</div><div><div class="t"><b>Ключ к прибыли.</b> Месячная аренда и корпоративные контракты сглаживают сезон.</div></div></div>
+        </div>
+    </div>
+    <div class="page-num">02</div>
+</section>
+
+<!-- ==================== 3. РЫНОК В ЦИФРАХ ==================== -->
+<section class="slide">
+    <div class="dune terra" style="width:700px;height:700px;right:-200px;bottom:-300px;"></div>
+    <div class="slide-content">
+        <div class="kicker reveal">Обзор</div>
+        <h2 class="title reveal">Рынок в цифрах</h2>
+        <div class="stats-grid reveal">
+            <div class="stat"><div class="num">2,2 млрд</div><div class="lab">AED — объём рынка ОАЭ, 2025</div></div>
+            <div class="stat"><div class="num">+11,8%</div><div class="lab">рост год к году</div></div>
+            <div class="stat"><div class="num">55%+</div><div class="lab">доля Дубая в выручке</div></div>
+            <div class="stat"><div class="num">$6,7 млрд</div><div class="lab">прогноз к 2035 (CAGR ~10%)</div></div>
+            <div class="stat"><div class="num">71 040</div><div class="lab">авто во флоте Дубая (+43% за год)</div></div>
+            <div class="stat"><div class="num">3 494</div><div class="lab">прокатные компании в городе</div></div>
+        </div>
+    </div>
+    <div class="page-num">03</div>
+</section>
+
+<!-- ==================== 4. РАЗДЕЛ: СЕЗОННОСТЬ ==================== -->
+<section class="slide section-slide">
+    <div class="dune gold" style="width:1000px;height:1000px;right:-280px;top:-350px;"></div>
+    <div class="slide-content">
+        <div class="idx reveal">Раздел 01</div>
+        <h2 class="title reveal">Сезонность спроса</h2>
+        <p class="lead reveal" style="margin-top:34px;">Почему зимой бронируют всё, а летом рынок замирает</p>
+    </div>
+    <div class="page-num">04</div>
+</section>
+
+<!-- ==================== 5. СЕЗОННЫЙ КАЛЕНДАРЬ ==================== -->
+<section class="slide">
+    <div class="dune blue" style="width:800px;height:800px;left:-300px;bottom:-300px;"></div>
+    <div class="slide-content">
+        <div class="kicker reveal">Календарь</div>
+        <h2 class="title reveal">Четыре сезона года</h2>
+        <div class="reveal">
+            <div class="season-band hot"><div class="mon">Ноябрь – февраль</div><div class="tag">Высокий</div><div class="desc">20–28°C · пик туристов 1,5+ млн/мес</div><div class="pct">макс.</div></div>
+            <div class="season-band hot"><div class="mon">25 дек – 5 янв</div><div class="tag">Пик · НГ</div><div class="desc">Абсолютный пик года</div><div class="pct">топ</div></div>
+            <div class="season-band warm"><div class="mon">Окт, апр–май</div><div class="tag">Плечевой</div><div class="desc">28–35°C · умеренный спрос</div><div class="pct">−15–30%</div></div>
+            <div class="season-band cool"><div class="mon">Июнь – сентябрь</div><div class="tag">Низкий</div><div class="desc">40°C+ · ~1 млн/мес</div><div class="pct">−40–50%</div></div>
+        </div>
+    </div>
+    <div class="page-num">05</div>
+</section>
+
+<!-- ==================== 6. ДИНАМИКА ==================== -->
+<section class="slide">
+    <div class="dune gold" style="width:700px;height:700px;left:-250px;top:-250px;"></div>
+    <div class="slide-content">
+        <div class="kicker reveal">Динамика</div>
+        <h2 class="title reveal">Спрос повторяет туристический поток</h2>
+        <div class="chart reveal">
+            <div class="bar-wrap"><div class="bar-val">35</div><div class="bar b1"></div><div class="bar-label">Лето<br>июн–сен</div></div>
+            <div class="bar-wrap"><div class="bar-val">68</div><div class="bar b2"></div><div class="bar-label">Плечевой<br>окт, апр–май</div></div>
+            <div class="bar-wrap"><div class="bar-val">100</div><div class="bar b3"></div><div class="bar-label">Зима<br>ноя–фев</div></div>
+        </div>
+        <p class="lead reveal" style="margin-top:40px; font-size:22px; color:var(--muted);">Индекс спроса по сезонам (зима = 100)</p>
+    </div>
+    <div class="page-num">06</div>
+</section>
+
+<!-- ==================== 7. ВЫСОКИЙ СЕЗОН ==================== -->
+<section class="slide">
+    <div class="dune terra" style="width:600px;height:600px;right:-180px;top:-250px;"></div>
+    <div class="slide-content">
+        <div class="kicker reveal">Пик</div>
+        <h2 class="title reveal">Высокий сезон</h2>
+        <div class="split reveal">
+            <div class="pros">
+                <h3>Возможности</h3>
+                <ul>
+                    <li>Погода 20–28°C — идеально для поездок</li>
+                    <li>1,5+ млн туристов в месяц</li>
+                    <li>Широкий выбор новых и премиум авто</li>
+                    <li>Событийная среда, полная загрузка</li>
+                </ul>
+            </div>
+            <div class="cons">
+                <h3>Риски</h3>
+                <ul>
+                    <li>Дефицит популярных моделей</li>
+                    <li>Высокие тарифы, пик — Новый год</li>
+                    <li>Пробки и сложности с парковкой</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="page-num">07</div>
+</section>
+
+<!-- ==================== 8. НИЗКИЙ СЕЗОН ==================== -->
+<section class="slide">
+    <div class="dune blue" style="width:600px;height:600px;right:-180px;bottom:-250px;"></div>
+    <div class="slide-content">
+        <div class="kicker reveal">Спад</div>
+        <h2 class="title reveal">Низкий сезон</h2>
+        <div class="split reveal">
+            <div class="cons">
+                <h3>Вызовы</h3>
+                <ul>
+                    <li>Жара 40°C+ отпугивает туристов</li>
+                    <li>Спрос падает до ~1 млн/мес</li>
+                    <li>Демпинг и простой флота</li>
+                </ul>
+            </div>
+            <div class="pros">
+                <h3>Возможности</h3>
+                <ul>
+                    <li>Лучшая цена года для клиента</li>
+                    <li>Скидки и апгрейды работают</li>
+                    <li>Окно для ТО и обновления парка</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="page-num">08</div>
+</section>
+
+<!-- ==================== 9. СОБЫТИЯ ==================== -->
+<section class="slide">
+    <div class="dune gold" style="width:700px;height:700px;left:-220px;top:-260px;"></div>
+    <div class="slide-content">
+        <div class="kicker reveal">Драйверы</div>
+        <h2 class="title reveal">События, дающие пики</h2>
+        <div class="num-list reveal">
+            <div class="num-item"><div class="n">DSF</div><div class="d">Dubai Shopping Festival (декабрь–январь) — массовый наплыв покупателей</div></div>
+            <div class="num-item"><div class="n">НГ</div><div class="d">Новый год 31 декабря — абсолютный пик спроса</div></div>
+            <div class="num-item"><div class="n">Eid</div><div class="d">Eid аль-Фитр и аль-Адха — поток из стран региона</div></div>
+            <div class="num-item"><div class="n">GITEX</div><div class="d">Октябрь — деловые путешественники, уходят премиум-модели</div></div>
+        </div>
+    </div>
+    <div class="page-num">09</div>
+</section>
+
+<!-- ==================== 10. РАЗДЕЛ: БИЗНЕС ==================== -->
+<section class="slide section-slide">
+    <div class="dune gold" style="width:1000px;height:1000px;right:-280px;bottom:-380px;"></div>
+    <div class="slide-content">
+        <div class="idx reveal">Раздел 02</div>
+        <h2 class="title reveal">Влияние на бизнес</h2>
+        <p class="lead reveal" style="margin-top:34px;">Что сезонность делает с выручкой, флотом и денежным потоком</p>
+    </div>
+    <div class="page-num">10</div>
+</section>
+
+<!-- ==================== 11. ВЛИЯНИЕ ==================== -->
+<section class="slide">
+    <div class="dune blue" style="width:800px;height:800px;right:-250px;top:-300px;"></div>
+    <div class="slide-content">
+        <div class="kicker reveal">Экономика</div>
+        <h2 class="title reveal">Как сезонность бьёт по бизнесу</h2>
+        <div class="num-list reveal">
+            <div class="num-item"><div class="n">1</div><div><div class="t"><b>Выручка.</b> Зимой кратно выше, летом проседает в разы.</div></div></div>
+            <div class="num-item"><div class="n">2</div><div><div class="t"><b>Загрузка.</b> Зимой 80–90%+, летом — простой.</div></div></div>
+            <div class="num-item"><div class="n">3</div><div><div class="t"><b>Цены.</b> Зимой премиум, летом демпинг.</div></div></div>
+            <div class="num-item"><div class="n">4</div><div><div class="t"><b>Поток.</b> Нужна подушка на лето и лизинг.</div></div></div>
+            <div class="num-item"><div class="n">5</div><div><div class="t"><b>Риск.</b> Переоценить зимний спрос и закупить лишний флот.</div></div></div>
+        </div>
+    </div>
+    <div class="page-num">11</div>
+</section>
+
+<!-- ==================== 12. РАЗДЕЛ: ЗАПУСК ==================== -->
+<section class="slide section-slide">
+    <div class="dune terra" style="width:900px;height:900px;left:-300px;top:-300px;"></div>
+    <div class="slide-content">
+        <div class="idx reveal">Раздел 03</div>
+        <h2 class="title reveal">Запуск бизнеса</h2>
+        <p class="lead reveal" style="margin-top:34px;">Лицензии, требования RTA и затраты первого года</p>
+    </div>
+    <div class="page-num">12</div>
+</section>
+
+<!-- ==================== 13. ЛИЦЕНЗИИ ==================== -->
+<section class="slide">
+    <div class="dune blue" style="width:700px;height:700px;right:-200px;bottom:-280px;"></div>
+    <div class="slide-content">
+        <div class="kicker reveal">Регулирование</div>
+        <h2 class="title reveal">Требования RTA</h2>
+        <div class="num-list reveal">
+            <div class="num-item"><div class="n">1</div><div class="d">Лицензия DET с кодом 6820 + разрешение RTA на флот</div></div>
+            <div class="num-item"><div class="n">2</div><div class="d">Минимальный флот — 5–10 авто, полное КАСКО на каждое</div></div>
+            <div class="num-item"><div class="n">3</div><div class="d">Регистрация (mulkiya) и техосмотр RTA</div></div>
+            <div class="num-item"><div class="n">4</div><div class="d">Salik-счёт на флот + депозит под штрафы 5–10 тыс. AED</div></div>
+            <div class="num-item"><div class="n">5</div><div class="d">Free zone — 100% иностранное владение, быстрее и дешевле</div></div>
+        </div>
+    </div>
+    <div class="page-num">13</div>
+</section>
+
+<!-- ==================== 14. ЗАТРАТЫ ==================== -->
+<section class="slide">
+    <div class="dune gold" style="width:700px;height:700px;left:-220px;bottom:-260px;"></div>
+    <div class="slide-content">
+        <div class="kicker reveal">Бюджет</div>
+        <h2 class="title reveal">Затраты первого года</h2>
+        <table class="costs reveal">
+            <tr><th>Статья</th><th style="text-align:right">AED</th></tr>
+            <tr><td>Торговая лицензия (год)</td><td class="r">3 000 – 8 000</td></tr>
+            <tr><td>RTA разрешение на аренду</td><td class="r">1 500 – 3 500</td></tr>
+            <tr><td>Регистрация авто (5–10 шт)</td><td class="r">8 000 – 15 000</td></tr>
+            <tr><td>Страховка флота КАСКО (год)</td><td class="r">5 000 – 12 000</td></tr>
+            <tr><td>Salik + депозит под штрафы</td><td class="r">2 000 – 5 000</td></tr>
+            <tr class="total"><td>ИТОГО первый год</td><td class="r">25 000 – 50 000</td></tr>
+        </table>
+        <p class="lead reveal" style="margin-top:30px; font-size:21px; font-style:italic;">Во free zone — от ~12 500 AED</p>
+    </div>
+    <div class="page-num">14</div>
+</section>
+
+<!-- ==================== 15. РАЗДЕЛ: РЕКОМЕНДАЦИИ ==================== -->
+<section class="slide section-slide">
+    <div class="dune gold" style="width:1000px;height:1000px;right:-300px;top:-350px;"></div>
+    <div class="slide-content">
+        <div class="idx reveal">Раздел 04</div>
+        <h2 class="title reveal">Рекомендации</h2>
+        <p class="lead reveal" style="margin-top:34px;">Как выжать максимум из сезонного рынка</p>
+    </div>
+    <div class="page-num">15</div>
+</section>
+
+<!-- ==================== 16. РЕКОМЕНДАЦИИ ==================== -->
+<section class="slide">
+    <div class="dune blue" style="width:800px;height:800px;right:-250px;bottom:-300px;"></div>
+    <div class="slide-content">
+        <div class="kicker reveal">План</div>
+        <h2 class="title reveal">Семь шагов к устойчивости</h2>
+        <div class="num-list reveal">
+            <div class="num-item"><div class="n">1</div><div class="d">Диверсифицируйте спрос — месячная аренда (45%) и корпоративные контракты</div></div>
+            <div class="num-item"><div class="n">2</div><div class="d">Динамическое ценообразование — премиум зимой, летние спецпредложения</div></div>
+            <div class="num-item"><div class="n">3</div><div class="d">Используйте лето — длинные контракты, ТО и обновление флота</div></div>
+            <div class="num-item"><div class="n">4</div><div class="d">Стартуйте в сентябре–октябре — успеть поймать зимний пик</div></div>
+            <div class="num-item"><div class="n">5</div><div class="d">Считайте простой — юнит-экономика и подушка ликвидности</div></div>
+            <div class="num-item"><div class="n">6</div><div class="d">Растущие ниши — премиум (+73%) и электромобили (+50%)</div></div>
+            <div class="num-item"><div class="n">7</div><div class="d">Каналы — агрегаторы + собственный сайт для прямых броней</div></div>
+        </div>
+    </div>
+    <div class="page-num">16</div>
+</section>
+
+<!-- ==================== 17. ЗАКЛЮЧЕНИЕ ==================== -->
+<section class="slide end-slide">
+    <div class="dune gold" style="width:1100px;height:1100px;left:-340px;top:-400px;"></div>
+    <div class="dune blue" style="width:900px;height:900px;right:-300px;bottom:-350px;"></div>
+    <div class="slide-content">
+        <div class="kicker reveal">Итог</div>
+        <h2 class="title reveal">Рынок растёт.<br>Спрос сезонный.<br>Возможности есть.</h2>
+        <p class="lead reveal" style="margin-top:46px; max-width:1000px;">Грамотное управление флотом и ценами под сезон превращает сезонность из риска в преимущество.</p>
+    </div>
+    <div class="page-num">17</div>
+</section>
+
+</main>
+</div>
+
+<script>
+/* ===========================================
+   КОНТРОЛЛЕР ПРЕЗЕНТАЦИИ
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.slides = Array.from(document.querySelectorAll('.slide'));
+        this.current = 0;
+        this.stage = document.getElementById('deckStage');
+        this.setupScale();
+        this.setupNav();
+        this.show(0);
+    }
+    setupScale() {
+        const scale = () => {
+            const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * f) / 2;
+            const y = (window.innerHeight - 1080 * f) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+        };
+        scale();
+        window.addEventListener('resize', scale);
+    }
+    setupNav() {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.getAttribute && e.target.getAttribute('contenteditable') === 'true') return;
+            if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); this.show(this.current + 1); }
+            if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); this.show(this.current - 1); }
+            if (e.key === 'Home') this.show(0);
+            if (e.key === 'End') this.show(this.slides.length - 1);
+        });
+        let wheelLock = false;
+        document.addEventListener('wheel', (e) => {
+            if (wheelLock) return;
+            if (Math.abs(e.deltaY) < 20) return;
+            wheelLock = true;
+            this.show(this.current + (e.deltaY > 0 ? 1 : -1));
+            setTimeout(() => wheelLock = false, 600);
+        }, { passive: true });
+        // touch
+        let tx = 0;
+        document.addEventListener('touchstart', (e) => { tx = e.touches[0].clientX; }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            const dx = e.changedTouches[0].clientX - tx;
+            if (Math.abs(dx) > 50) this.show(this.current + (dx < 0 ? 1 : -1));
+        }, { passive: true });
+    }
+    show(i) {
+        this.current = Math.max(0, Math.min(i, this.slides.length - 1));
+        this.slides.forEach((s, idx) => {
+            s.classList.toggle('active', idx === this.current);
+            s.classList.toggle('visible', idx === this.current);
+        });
+    }
+}
+new SlidePresentation();
+
+/* ===========================================
+   ИНЛАЙН-РЕДАКТИРОВАНИЕ (клавиша E)
+   =========================================== */
+const editor = {
+    isActive: false,
+    toggle() {
+        this.isActive = !this.isActive;
+        const els = document.querySelectorAll('.slide [data-edit]');
+        els.forEach(el => el.setAttribute('contenteditable', this.isActive ? 'true' : 'false'));
+        document.getElementById('editToggle').classList.toggle('active', this.isActive);
+    }
+};
+// включим редактирование для текстовых элементов
+document.querySelectorAll('.kicker, .title, .lead, .t, .d, .lab, .mon, .desc, td, th, .idx, .brand, .bar-label').forEach(el => el.setAttribute('data-edit', ''));
+
+const hotzone = document.querySelector('.edit-hotzone');
+const editToggle = document.getElementById('editToggle');
+let hideT = null;
+hotzone.addEventListener('mouseenter', () => { clearTimeout(hideT); editToggle.classList.add('show'); });
+hotzone.addEventListener('mouseleave', () => { hideT = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+editToggle.addEventListener('mouseenter', () => clearTimeout(hideT));
+editToggle.addEventListener('mouseleave', () => { hideT = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+editToggle.addEventListener('click', () => editor.toggle());
+hotzone.addEventListener('click', () => editor.toggle());
+document.addEventListener('keydown', (e) => {
+    if ((e.key === 'e' || e.key === 'E') && !(e.target.getAttribute && e.target.getAttribute('contenteditable') === 'true')) {
+        editor.toggle();
+    }
+});
+</script>
+</body>
+</html>
